@@ -25,13 +25,14 @@ final class APNSAlertNotificationTests: XCTestCase {
             expiration: .immediately,
             priority: .immediately,
             topic: "",
-            payload: Payload()
+            payload: Payload(),
+            contentAvailable: 1
         )
         let encoder = JSONEncoder()
         let data = try encoder.encode(notification)
 
         let expectedJSONString = """
-        {"foo":"bar","aps":{"alert":{"title":"title"}}}
+        {"foo":"bar","aps":{"alert":{"title":"title"}, "content-available": 1}}
         """
         let jsonObject1 = try JSONSerialization.jsonObject(with: data) as! NSDictionary
         let jsonObject2 = try JSONSerialization.jsonObject(with: expectedJSONString.data(using: .utf8)!) as! NSDictionary

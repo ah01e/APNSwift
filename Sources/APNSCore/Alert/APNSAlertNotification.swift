@@ -46,6 +46,15 @@ public struct APNSAlertNotification<Payload: Encodable & Sendable>: APNSMessage,
         }
     }
 
+    public var contentAvailable: Int? {
+        get {
+            self.aps.contentAvailable
+        }
+        set {
+            self.aps.contentAvailable = newValue
+        }
+    }
+
     /// The sound to play for your alert.
     public var sound: APNSAlertNotificationSound? {
         get {
@@ -191,12 +200,13 @@ public struct APNSAlertNotification<Payload: Encodable & Sendable>: APNSMessage,
         targetContentID: String? = nil,
         interruptionLevel: APNSAlertNotificationInterruptionLevel? = nil,
         relevanceScore: Double? = nil,
-        apnsID: UUID? = nil
+        apnsID: UUID? = nil,
+        contentAvailable: Int? = nil
     ) {
         self.aps = APNSAlertNotificationAPSStorage(
             alert: alert,
             badge: badge,
-            sound: sound,
+            contentAvailable: contentAvailable, sound: sound,
             threadID: threadID,
             category: category,
             mutableContent: mutableContent,
