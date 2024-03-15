@@ -46,7 +46,7 @@ public struct APNSAlertNotification<Payload: Encodable & Sendable>: APNSMessage,
         }
     }
 
-    public var contentAvailable: Int? {
+    public var contentAvailable: Int {
         get {
             self.aps.contentAvailable
         }
@@ -201,12 +201,13 @@ public struct APNSAlertNotification<Payload: Encodable & Sendable>: APNSMessage,
         interruptionLevel: APNSAlertNotificationInterruptionLevel? = nil,
         relevanceScore: Double? = nil,
         apnsID: UUID? = nil,
-        contentAvailable: Int? = nil
+        contentAvailable: Int = 0
     ) {
         self.aps = APNSAlertNotificationAPSStorage(
             alert: alert,
             badge: badge,
-            contentAvailable: contentAvailable, sound: sound,
+            contentAvailable: contentAvailable,
+            sound: sound,
             threadID: threadID,
             category: category,
             mutableContent: mutableContent,
