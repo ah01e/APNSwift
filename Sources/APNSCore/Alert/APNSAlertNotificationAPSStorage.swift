@@ -29,7 +29,7 @@ struct APNSAlertNotificationAPSStorage: Encodable, Sendable {
     var alert: APNSAlertNotificationContent
 
     var badge: Int?
-    var contentAvailable: Int?
+    var contentAvailable: Int
 
     var sound: APNSAlertNotificationSound?
 
@@ -54,7 +54,7 @@ struct APNSAlertNotificationAPSStorage: Encodable, Sendable {
     init(
         alert: APNSAlertNotificationContent,
         badge: Int? = nil,
-        contentAvailable: Int? = nil,
+        contentAvailable: Int = 0,
         sound: APNSAlertNotificationSound? = nil,
         threadID: String? = nil,
         category: String? = nil,
@@ -67,9 +67,8 @@ struct APNSAlertNotificationAPSStorage: Encodable, Sendable {
             precondition(relevanceScore >= 0 && relevanceScore <= 1, "The relevance score can only be between 0 and 1")
         }
 
-        if let contentAvailable = contentAvailable {
-            precondition(contentAvailable == 0 || contentAvailable == 1, "The relevance score can only be 0 and 1")
-        }
+        precondition(contentAvailable == 0 || contentAvailable == 1, "The relevance score can only be 0 and 1")
+        
         self.alert = alert
         self.badge = badge
         self.contentAvailable = contentAvailable
