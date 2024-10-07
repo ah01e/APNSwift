@@ -13,7 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 import APNSCore
-import Crypto
+@preconcurrency import Crypto
 import NIOSSL
 import NIOTLS
 import AsyncHTTPClient
@@ -22,7 +22,7 @@ import AsyncHTTPClient
 public struct APNSClientConfiguration: Sendable {
     /// The authentication method used by the ``APNSClient``.
     public struct AuthenticationMethod: Sendable {
-        internal enum Method {
+        internal enum Method : Sendable{
             case jwt(privateKey: P256.Signing.PrivateKey, teamIdentifier: String, keyIdentifier: String)
             case tls(privateKey: NIOSSLPrivateKeySource, certificateChain: [NIOSSLCertificateSource])
         }
@@ -67,7 +67,7 @@ public struct APNSClientConfiguration: Sendable {
     /// Upstream proxy, defaults to no proxy.
     public var proxy: HTTPClient.Configuration.Proxy?
 
-    /// Initializes a new ``APNSClient.Configuration``.
+    /// Initializes a new ``APNSClientConfiguration``.
     ///
     /// - Parameters:
     ///   - authenticationMethod: The authentication method used by the ``APNSClient``.

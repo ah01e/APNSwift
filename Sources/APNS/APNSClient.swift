@@ -14,7 +14,6 @@
 
 import APNSCore
 import AsyncHTTPClient
-import Dispatch
 import struct Foundation.Date
 import struct Foundation.UUID
 import NIOConcurrencyHelpers
@@ -58,8 +57,8 @@ public final class APNSClient<Decoder: APNSJSONDecoder, Encoder: APNSJSONEncoder
 
     /// Initializes a new APNS.
     ///
-    /// The client will create an internal ``HTTPClient`` which is used to make requests to APNs.
-    /// This ``HTTPClient`` is intentionally internal since both authentication mechanisms are bound to a
+    /// The client will create an internal `HTTPClient` which is used to make requests to APNs.
+    /// This `HTTPClient` is intentionally internal since both authentication mechanisms are bound to a
     /// single connection and these connections cannot be shared.
     ///
     ///
@@ -68,7 +67,7 @@ public final class APNSClient<Decoder: APNSJSONDecoder, Encoder: APNSJSONEncoder
     ///   - eventLoopGroupProvider: Specify how EventLoopGroup will be created.
     ///   - responseDecoder: The decoder for the responses from APNs.
     ///   - requestEncoder: The encoder for the requests to APNs.
-    ///   - backgroundActivityLogger: The logger used by the APNS.
+    ///   - byteBufferAllocator: The `ByteBufferAllocator`.
     public init(
         configuration: APNSClientConfiguration,
         eventLoopGroupProvider: NIOEventLoopGroupProvider,
@@ -114,27 +113,13 @@ public final class APNSClient<Decoder: APNSJSONDecoder, Encoder: APNSJSONEncoder
         }
     }
 
-    /// Shuts down the client and event loop gracefully. This function is clearly an outlier in that it uses a completion
-    /// callback instead of an EventLoopFuture. The reason for that is that NIO's EventLoopFutures will call back on an event loop.
-    /// The virtue of this function is to shut the event loop down. To work around that we call back on a DispatchQueue
-    /// instead.
-    ///
-    /// - Important: This will only shutdown the event loop if the provider passed to the client was ``createNew``.
-    /// For shared event loops the owner of the event loop is responsible for handling the lifecycle.
-    ///
-    /// - Parameters:
-    ///   - queue: The queue on which the callback is invoked on.
-    ///   - callback: The callback that is invoked when everything is shutdown.
-    public func shutdown(queue: DispatchQueue = .global(), callback: @escaping (Error?) -> Void) {
-        self.httpClient.shutdown(callback)
-    }
-
-    /// Shuts down the client and `EventLoopGroup` if it was created by the client.
-    public func syncShutdown() throws {
-        try self.httpClient.syncShutdown()
+    /// Shuts down the client gracefully.
+    public func shutdown() async throws {
+        try await self.httpClient.shutdown()
     }
 }
 
+extension APNSClient: Sendable where Decoder: Sendable, Encoder: Sendable {}
 
 // MARK: - Raw sending
 
@@ -144,7 +129,7 @@ extension APNSClient {
         var headers = self.defaultRequestHeaders
 
         // Push type
-        headers.add(name: "apns-push-type", value: request.pushType.configuration.rawValue)
+        headers.add(name: "apns-push-type", value: request.pushType.description)
 
         // APNS ID
         if let apnsID = request.apnsID {
@@ -191,9 +176,10 @@ extension APNSClient {
         let response = try await self.httpClient.execute(httpClientRequest, deadline: .distantFuture)
 
         let apnsID = response.headers.first(name: "apns-id").flatMap { UUID(uuidString: $0) }
+        let apnsUniqueID = response.headers.first(name: "apns-unique-id").flatMap { UUID(uuidString: $0) }
 
         if response.status == .ok {
-            return APNSResponse(apnsID: apnsID)
+            return APNSResponse(apnsID: apnsID, apnsUniqueID: apnsUniqueID)
         }
 
         let body = try await response.body.collect(upTo: 1024)
@@ -202,6 +188,7 @@ extension APNSClient {
         let error = APNSError(
             responseStatus: Int(response.status.code),
             apnsID: apnsID,
+            apnsUniqueID: apnsUniqueID,
             apnsResponse: errorResponse,
             timestamp: errorResponse.timestampInSeconds.flatMap { Date(timeIntervalSince1970: $0) }
         )
